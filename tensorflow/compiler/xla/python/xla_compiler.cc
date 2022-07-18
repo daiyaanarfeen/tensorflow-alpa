@@ -525,6 +525,23 @@ void BuildXlaCompilerSubmodule(py::module& m) {
             }
             return ret;
           })
+      .def("hlo_operand_shape", [](std::shared_ptr<HloModule> hlo_module) -> std::vector<std::pair<std::string, std::vector<xla::Shape>>>{
+           std::vector<std::pair<std::string, std::vector<xla::Shape>>> res;
+           for (const HloInstruction* ins : hlo_module->entry_computation()->instructions()){
+            std::string name = xla::HloOpcodeString(ins->opcode());
+            int64_t count = ins->operand_count();
+            if (count > 0){
+              std::vector<xla::Shape> shapes;
+              for (int64_t i = 0; i < count; i++)
+              {
+                shapes.push_back(ins->operand(i)->shape());
+                // std::cerr << name << " " << i << " " << ins->operand(i)->shape().dimensions_size() << "\n";
+              }
+              res.push_back(std::make_pair(name, shapes));
+            }
+           }
+           return res;
+          })
       .def("name", &HloModule::name);
 
   m.def("hlo_module_to_dot_graph",
