@@ -525,6 +525,39 @@ void BuildXlaCompilerSubmodule(py::module& m) {
             }
             return ret;
           })
+      .def("hlo_opnames", [](std::shared_ptr<HloModule> hlo_module) -> std::vector<std::string>{
+           std::vector<std::string> res;
+           for (const HloInstruction* ins : hlo_module->entry_computation()->instructions()){
+            std::string name = xla::HloOpcodeString(ins->opcode());
+            res.push_back(name);
+           }
+           return res;
+          })
+      .def("hlo_opshape", [](std::shared_ptr<HloModule> hlo_module) -> std::vector<std::string>{
+           std::vector<std::string> res;
+           for (const HloInstruction* ins : hlo_module->entry_computation()->instructions()){
+            std::string str = ins->shape().ToString(true);
+            res.push_back(str);
+           }
+           return res;
+          })
+      .def("hlo_operand_count", [](std::shared_ptr<HloModule> hlo_module) -> std::vector<std::pair<std::string, std::vector<std::string>>>{
+           std::vector<std::pair<std::string, std::vector<std::string>>> res;
+           for (const HloInstruction* ins : hlo_module->entry_computation()->instructions()){
+            std::string name = xla::HloOpcodeString(ins->opcode());
+            int64_t count = ins->operand_count();
+            std::vector<std::string> shape;
+            if (count > 0){
+              for (int64_t i = 0; i < count; i++)
+              {
+                shape.push_back(ins->operand(i)->shape().ToString(false));
+                // std::cerr << name << " " << i << " " << ins->operand(i)->shape().dimensions_size() << "\n";
+              }
+              res.push_back(std::make_pair(name, shape));
+            }
+           }
+           return res;
+          })
       .def("hlo_operand_shape", [](std::shared_ptr<HloModule> hlo_module) -> std::vector<std::pair<std::string, std::vector<xla::Shape>>>{
            std::vector<std::pair<std::string, std::vector<xla::Shape>>> res;
            for (const HloInstruction* ins : hlo_module->entry_computation()->instructions()){
@@ -535,6 +568,11 @@ void BuildXlaCompilerSubmodule(py::module& m) {
               for (int64_t i = 0; i < count; i++)
               {
                 shapes.push_back(ins->operand(i)->shape());
+                if (name.compare("reshape") == 0 or name.compare("broadcast") == 0){
+                  shapes.push_back(ins->shape());
+                  // std::cerr << name << ins->shape() << " "<< " " << ins->ToString() << "\n";
+                }
+
                 // std::cerr << name << " " << i << " " << ins->operand(i)->shape().dimensions_size() << "\n";
               }
               res.push_back(std::make_pair(name, shapes));
