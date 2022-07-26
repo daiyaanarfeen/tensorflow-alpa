@@ -565,15 +565,18 @@ void BuildXlaCompilerSubmodule(py::module& m) {
             int64_t count = ins->operand_count();
             if (count > 0){
               std::vector<xla::Shape> shapes;
-              for (int64_t i = 0; i < count; i++)
-              {
+              for (int64_t i = 0; i < count; i++){
                 shapes.push_back(ins->operand(i)->shape());
-                if (name.compare("reshape") == 0 or name.compare("broadcast") == 0){
-                  shapes.push_back(ins->shape());
-                  // std::cerr << name << ins->shape() << " "<< " " << ins->ToString() << "\n";
-                }
+                
+                // if (name.compare("dot") == 0) {
+                //   std::cerr << "************** dot dimension number " << ins->dot_dimension_numbers().lhs_contracting_dimensions() << "\n";
+                // }
 
                 // std::cerr << name << " " << i << " " << ins->operand(i)->shape().dimensions_size() << "\n";
+              }
+              if (name.compare("reshape") == 0 or name.compare("broadcast") == 0 or name.compare("dot") == 0){
+                  shapes.push_back(ins->shape());
+                  // std::cerr << name << ins->shape() << " "<< " " << ins->ToString() << "\n";
               }
               res.push_back(std::make_pair(name, shapes));
             }
